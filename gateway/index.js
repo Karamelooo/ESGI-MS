@@ -9,56 +9,46 @@ app.use(express.json());
 
 const consulService = new ConsulService('gateway', PORT);
 
+const routeToServiceMap = {
+  '/api/products': 'catalogue',
+  '/api/orders': 'commande'
+};
+
 const logRequest = (req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 };
 
-// Application des middlewares globaux
 app.use(logRequest);
 
-// Routes pour le service catalogue
-app.get('/api/products', async (req, res) => {
+app.use('/api/*', async (req, res) => {
   try {
-    const catalogueUrl = await consulService.getServiceUrl('catalogue');
-    if (!catalogueUrl) {
-      return res.status(503).json({ message: 'Service catalogue non disponible' });
-    }
-    
-    const response = await axios.get(`${catalogueUrl}/products`);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Erreur lors de la récupération des produits:', error);
-    res.status(500).json({ message: 'Erreur interne du serveur' });
-  }
-});
+    const serviceName = Object.entries(routeToServiceMap).find(([route]) => 
+      req.originalUrl.startsWith(route)
+    )?.[1];
 
-app.get('/api/products/:id', async (req, res) => {
-  try {
-    const catalogueUrl = await consulService.getServiceUrl('catalogue');
-    if (!catalogueUrl) {
-      return res.status(503).json({ message: 'Service catalogue non disponible' });
+    if (!serviceName) {
+      return res.status(404).json({ message: 'Route non trouvée' });
     }
-    
-    const response = await axios.get(`${catalogueUrl}/products/${req.params.id}`);
-    res.json(response.data);
-  } catch (error) {
-    console.error('Erreur lors de la récupération du produit:', error);
-    res.status(500).json({ message: 'Erreur interne du serveur' });
-  }
-});
 
-app.post('/api/orders', async (req, res) => {
-  try {
-    const commandeUrl = await consulService.getServiceUrl('commande');
-    if (!commandeUrl) {
-      return res.status(503).json({ message: 'Service commande non disponible' });
-    }
+    const serviceUrl = await consulService.getServiceUrl(serviceName);
     
-    const response = await axios.post(`${commandeUrl}/orders`, req.body);
-    res.status(201).json(response.data);
+    if (!serviceUrl) {
+      return res.status(503).json({ message: `Service ${serviceName} non disponible` });
+    }
+
+    const targetUrl = `${serviceUrl}${req.originalUrl.replace('/api', '')}`;
+    
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: req.headers
+    });
+
+    res.status(response.status).json(response.data);
   } catch (error) {
-    console.error('Erreur lors de la création de la commande:', error);
+    console.error(`Erreur lors de la redirection vers ${serviceName}:`, error);
     res.status(500).json({ message: 'Erreur interne du serveur' });
   }
 });
