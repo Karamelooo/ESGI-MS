@@ -1,6 +1,19 @@
 version: '3.8'
 
 services:
+  catalogue:
+    build: 
+      context: ./catalogue
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./catalogue:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+
   commande:
     build: 
       context: ./commande
@@ -13,3 +26,5 @@ services:
     environment:
       - NODE_ENV=development
     command: npm run dev
+    depends_on:
+      - catalogue
