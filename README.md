@@ -6,7 +6,7 @@
 
 ## Architecture du projet
 
-Le projet est composé de trois microservices principaux :
+Le projet est composé de quatre microservices principaux :
 
 ### 1. Service Catalogue (Port 8081)
 - Gestion des produits
@@ -55,6 +55,7 @@ Le projet est composé de trois microservices principaux :
 - Docker
 - Docker Compose
 - Consul (Service de découverte)
+- Jest (bonus)
 
 ## Déploiement
 
@@ -71,7 +72,7 @@ Les services sont configurés pour communiquer entre eux via les ports suivants 
 - Gateway : 3000
 - Catalogue : 8081
 - Commande : 8082
-- Service de découverte : 8761
+- Service de découverte : 8500
 
 ### Fonctionnement du service de découverte
 1. Le service de découverte démarre en premier
