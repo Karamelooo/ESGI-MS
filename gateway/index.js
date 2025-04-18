@@ -23,32 +23,65 @@ app.use(logRequest);
 
 app.use('/api/*', async (req, res) => {
   try {
+    console.log('Nouvelle requête reçue:', {
+      method: req.method,
+      url: req.originalUrl,
+      body: req.body
+    });
+
     const serviceName = Object.entries(routeToServiceMap).find(([route]) => 
       req.originalUrl.startsWith(route)
     )?.[1];
 
+    console.log('Service trouvé:', serviceName);
+
     if (!serviceName) {
+      console.log('Aucun service trouvé pour cette route');
       return res.status(404).json({ message: 'Route non trouvée' });
     }
 
     const serviceUrl = await consulService.getServiceUrl(serviceName);
+    console.log('URL du service:', serviceUrl);
     
     if (!serviceUrl) {
+      console.log('Service non disponible');
       return res.status(503).json({ message: `Service ${serviceName} non disponible` });
     }
 
     const targetUrl = `${serviceUrl}${req.originalUrl.replace('/api', '')}`;
+    console.log('URL cible:', targetUrl);
     
-    const response = await axios({
+    console.log('Body de la requête:', req.body);
+    
+    const axiosConfig = {
       method: req.method,
       url: targetUrl,
       data: req.body,
-      headers: req.headers
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      timeout: 30000,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity
+    };
+
+    console.log('Configuration axios:', axiosConfig);
+    
+    const response = await axios(axiosConfig);
+
+    console.log('Réponse reçue du service:', {
+      status: response.status,
+      data: response.data
     });
 
     res.status(response.status).json(response.data);
   } catch (error) {
-    console.error(`Erreur lors de la redirection vers ${serviceName}:`, error);
+    console.error('Erreur détaillée:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
     res.status(500).json({ message: 'Erreur interne du serveur' });
   }
 });
