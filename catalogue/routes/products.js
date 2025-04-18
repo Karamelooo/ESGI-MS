@@ -5,12 +5,12 @@ import { products, getNextId } from '../data/store.js';
 const router = express.Router();
 
 router.get('/', (req, res) => {
-    res.json(products);
+    res.json(Array.from(products.values()));
 });
 
 router.get('/:id', (req, res) => {
     const id = parseInt(req.params.id);
-    const product = products.find(p => p.id === id);
+    const product = products.get(id);
 
     if (!product) {
         return res.status(404).json({ error: "Produit introuvable." });
@@ -26,8 +26,9 @@ router.post('/', (req, res) => {
         return res.status(400).json({ error: "Le nom et le prix sont requis." });
     }
 
-    const product = new Product(getNextId(), name, price);
-    products.push(product);
+    const id = getNextId();
+    const product = new Product(id, name, price);
+    products.set(id, product);
 
     res.status(201).json(product);
 });
