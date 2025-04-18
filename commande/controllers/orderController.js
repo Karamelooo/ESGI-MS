@@ -14,7 +14,7 @@ export const createOrder = async (req, res) => {
   try {
     const products = await catalogueService.getProducts(productIds);
     const order = new Order(getNextId(), products);
-    orders.push(order);
+    orders.set(order.id, order);
 
     res.status(201).json(order);
   } catch (error) {
@@ -24,7 +24,7 @@ export const createOrder = async (req, res) => {
 
 export const getOrder = (req, res) => {
   const id = parseInt(req.params.id);
-  const order = orders.find(o => o.id === id);
+  const order = orders.get(id);
 
   if (!order) {
     return res.status(404).json({ error: "Commande introuvable." });
@@ -34,5 +34,5 @@ export const getOrder = (req, res) => {
 };
 
 export const getAllOrders = (req, res) => {
-  res.json(orders);
+  res.json(Array.from(orders.values()));
 }; 
