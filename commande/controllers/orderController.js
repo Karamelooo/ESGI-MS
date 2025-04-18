@@ -1,6 +1,8 @@
-import axios from 'axios';
 import Order from '../models/order.js';
 import { orders, getNextId } from '../data/store.js';
+import { CatalogueService } from '../services/catalogueService.js';
+
+const catalogueService = new CatalogueService();
 
 export const createOrder = async (req, res) => {
   const { productIds } = req.body;
@@ -10,13 +12,7 @@ export const createOrder = async (req, res) => {
   }
 
   try {
-    const products = [];
-
-    for (const id of productIds) {
-      const response = await axios.get(`http://localhost:8081/products/${id}`);
-      products.push(response.data);
-    }
-
+    const products = await catalogueService.getProducts(productIds);
     const order = new Order(getNextId(), products);
     orders.push(order);
 
@@ -35,4 +31,8 @@ export const getOrder = (req, res) => {
   }
 
   res.json(order);
+};
+
+export const getAllOrders = (req, res) => {
+  res.json(orders);
 }; 
