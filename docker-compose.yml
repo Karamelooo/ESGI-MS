@@ -1,4 +1,10 @@
 services:
+  consul:
+    image: hashicorp/consul:1.15.4
+    ports:
+      - "8500:8500"
+    command: agent -server -bootstrap -ui -client=0.0.0.0
+
   catalogue:
     build: 
       context: ./catalogue
@@ -10,7 +16,11 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
     command: npm run dev
+    depends_on:
+      - consul
 
   commande:
     build: 
@@ -23,6 +33,9 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
     command: npm run dev
     depends_on:
+      - consul
       - catalogue

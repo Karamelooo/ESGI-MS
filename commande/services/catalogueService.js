@@ -1,18 +1,23 @@
 import axios from 'axios';
+import { ConsulService } from './consulService.js';
 
-const CATALOGUE_URL = 'http://catalogue:8081';
+const consulService = new ConsulService('commande', 8082);
+consulService.register();
 
 export class CatalogueService {
   constructor() {
     this.client = axios.create({
-      baseURL: CATALOGUE_URL,
       timeout: 5000
     });
   }
 
   async getProduct(id) {
     try {
-      const response = await this.client.get(`/products/${id}`);
+      const catalogueUrl = await consulService.getServiceUrl('catalogue');
+      if (!catalogueUrl) {
+        throw new Error('Service catalogue non disponible');
+      }
+      const response = await this.client.get(`${catalogueUrl}/products/${id}`);
       return response.data;
     } catch (error) {
       console.error(`Erreur lors de la récupération du produit ${id}:`, error);
